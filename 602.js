@@ -1,11 +1,3 @@
-// TODOS:
-// - pictures
-// - linespacing on normal font
-// - page numbering (first page must be set after header initialization)
-// - header and footer
-// - control chars 1A, 8D, AD, FE
-
-
 const tcode = {
     KEYBCS2: 0,
     LATIN2: 1,
