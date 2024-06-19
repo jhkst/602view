@@ -1,0 +1,85 @@
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #content {
+        width: 100%;
+        height: 100%;
+    }
+    .c602.page {
+        page-break-before: always;
+        visibility: visible;
+        break-after: page;
+        background-color: white;
+        border: 0px;
+    }
+}
+
+
+
+.c602 {
+    white-space: pre;
+    line-height: 1.15em;
+    font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace;
+}
+
+.c602.page {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px;
+}
+
+.c602.bold {
+    font-weight: bold;
+}
+
+.c602.italic {
+    font-style: italic;
+}
+
+.c602.underline {
+    text-decoration: underline;
+}
+
+.c602.wideFont { /* twice as wide as normal */
+    display: inline-block;
+    transform-origin: left center;
+    transform: scale(2, 1);
+}
+
+.c602.highFont { /* twice as high as normal */
+    display: inline-block;
+    transform-origin: left center;
+    transform: scale(1, 2);
+}
+
+.c602.bigFont { /* twice as wide and twice as high as normal */
+    display: inline-block;
+    transform-origin: left center;
+    transform: scale(2, 2);
+}
+
+.c602.upperIndex {
+    vertical-align: super;
+    letter-spacing: 0.4em;
+    font-size: 0.6em;
+}
+
+.c602.lowerIndex {
+    vertical-align: sub;
+    letter-spacing: 0.4em;
+    font-size: 0.6em;
+}
+
+.c602.lineHeight6 {
+    line-height: 1.15em;
+}
+
+.c602.lineHeight4 {
+    line-height: 1.725em;
+}
+
+.c602.lineHeight3 {
+    line-height: 2.3em;
+}
