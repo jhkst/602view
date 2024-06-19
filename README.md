@@ -8,3 +8,5 @@ This is another convertor for T602 file type.
 
 Loads the T602 file into browser and renders it into html.
 
+Try it out [here](https://jhkst.github.io/602view/)
+
