@@ -258,7 +258,7 @@ class DocumentWriter {
     setRightMargin(rightMargin) { this.rightMargin = rightMargin; }
     setPageLength(pageLength) { this.pageLength = pageLength; }
     setPrintLeftMargin(printLeftMargin) { this.printLeftMargin = printLeftMargin;}
-    setFirstPageNumber(firstPageNumber) { this.firstPageNumber = firstPageNumber; updatePageNumber();}
+    setFirstPageNumber(firstPageNumber) { this.firstPageNumber = firstPageNumber; }
     setLineHeight(lineHeight) { this.lineHeight = lineHeight; this.updateLineSpacing(); }
     setPrintOmitPageNumber() { this.printOmitPage = true; }
     setHeader(header) { this.header = header; }
