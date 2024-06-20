@@ -5,7 +5,10 @@ function handleFile(event) {
     var reader = new FileReader();
     reader.onload = function (event) {
         var arrayBuffer = event.target.result;
-        const charsetMode = document.getElementById('cyrillic').checked ? CharsetMode.CYRILLIC : CharsetMode.LATIN;
+        // get value of radio button of name="charsetMode"
+        const charsetModeValue = document.querySelector('input[name="charsetMode"]:checked').value;
+        const charsetMode = charsetModeValue === 'cyrillic' ? CharsetMode.CYRILLIC : CharsetMode.LATIN;
+
         const documentWriter = new DOMWriter(document.getElementById('content'));
 
         const t602Reader = new T602Reader(arrayBuffer);
