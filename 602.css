@@ -1,9 +1,13 @@
 @media print {
+    @page {
+        margin: 0;
+        padding: 0;
+    }
+
     body * {
         visibility: hidden;
     }
     #content {
-        width: 100%;
         height: 100%;
     }
     .c602.page {
@@ -12,6 +16,11 @@
         break-after: page;
         background-color: white;
         border: 0px;
+        overflow: hidden;
+    }
+
+    .c602.page * {
+        visibility: visible;
     }
 }
 
