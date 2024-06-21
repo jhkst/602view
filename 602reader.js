@@ -1,257 +1,3 @@
-document.getElementById('fileInput').addEventListener('change', handleFile, false);
-
-function handleFile(event) {
-    var file = event.target.files[0];
-    var reader = new FileReader();
-    reader.onload = function (event) {
-        var arrayBuffer = event.target.result;
-        // get value of radio button of name="charsetMode"
-        const charsetModeValue = document.querySelector('input[name="charsetMode"]:checked').value;
-        const charsetMode = charsetModeValue === 'cyrillic' ? CharsetMode.CYRILLIC : CharsetMode.LATIN;
-
-        const documentWriter = new DOMWriter(document.getElementById('content'));
-
-        const t602Reader = new T602Reader(arrayBuffer);
-        t602Reader.setCharsetMode(charsetMode);
-        t602Reader.render(documentWriter);
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-const FONT_STYLE = {
-    BOLD:        0x02,
-    ITALIC:      0x04,
-    UNDERLINE:   0x13,
-    WIDE:        0x0f,
-    HIGH:        0x10,
-    UPPER_INDEX: 0x14,
-    LOWER_INDEX: 0x16,
-    BIG:         0x1d
-}
-
-const LINE_HEIGHT = {
-    SINGLE: 6,
-    ONE_HALF: 4,
-    DOUBLE: 3
-}
-
-class DOMWriter {
-
-    constructor(parent) {
-        parent.replaceChildren();
-        this.allTagClass = 'c602';
-        this.parent = parent;
-        
-        this.currentTag = parent;
-        this.currentPageTag = null;
-        this.charTable;
-        this.currentClasses = [];
-        this.tabs = '-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T-----T'
-        this.marginTop = 3;
-        this.marginBottom = 3;
-        this.leftMargin = 1;
-        this.rightMargin = 65;
-        this.pageLength = 55;
-        this.printLeftMargin = 5; // left margin for printout
-        this.firstPageNumber = 1; // first page number
-        this.lineHeight = 6;  // 6 == 1, 4 == 1.5, 3 == 2
-        this.header = null;
-        this.footer = null;
-        this.printOmitPage = false;
-        this.charsetMode = 0;
-
-        this.pageLinesCounter = 0;
-        this.charOnLineCounter = 0;
-
-        this.readingHeader = true;
-    }
-
-    setCharTable(charTable) { this.charTable = charTable; }
-    setTabs(tabs) { this.tabs = tabs; }
-    setMarginTop(marginTop) { this.marginTop = marginTop; }
-    setMarginBottom(marginBottom) { this.marginBottom = marginBottom; }
-    setLeftMargin(leftMargin) { this.leftMargin = leftMargin;}
-    setRightMargin(rightMargin) { this.rightMargin = rightMargin; }
-    setPageLength(pageLength) { this.pageLength = pageLength; }
-    setPrintLeftMargin(printLeftMargin) { this.printLeftMargin = printLeftMargin;}
-    setFirstPageNumber(firstPageNumber) { this.firstPageNumber = firstPageNumber; }
-    setLineHeight(lineHeight) { this.lineHeight = lineHeight; this.#updateLineSpacing(); }
-    setPrintOmitPageNumber() { this.printOmitPage = true; }
-    setHeader(header) { this.header = header; }
-    setFooter(footer) { this.footer = footer; }
-    setCharsetMode(charsetMode) { this.charsetMode = charsetMode; }
-
-
-    newPage() {
-        const pageClass = 'page'; 
-
-        let copyStyles = null;
-        if (this.currentTag.tagName === 'SPAN') {
-            console.log('Page number', this.firstPageNumber);
-            copyStyles = this.currentTag.className.split(' ').filter(c => c && c !== this.allTagClass);
-            copyStyles.forEach(c => this.#switchStyleClass(c));
-        }
-
-        const pageTag = document.createElement('div');
-        pageTag.setAttribute('title', 'Page ' + this.firstPageNumber++);
-        pageTag.className = [this.allTagClass, pageClass].join(' ');
-        this.parent.appendChild(pageTag);
-        this.currentTag = pageTag;
-        this.currentPageTag = pageTag;
-        this.currentClasses = []; //???
-        this.pageLinesCounter = 0;
-        
-
-        // top margin
-        this.#marginLines(this.marginTop);
-
-        if (copyStyles) {
-            copyStyles.forEach(c => this.#switchStyleClass(c));
-        }
-    }
-
-    leftMarginSpaces() {
-        return ' '.repeat(this.leftMargin + this.printLeftMargin);
-    }
-
-    switchFontStyle(fontStyle) {
-        switch (fontStyle) {
-            case FONT_STYLE.BOLD: this.#switchStyleClass('bold'); break;
-            case FONT_STYLE.ITALIC: this.#switchStyleClass('italic'); break;
-            case FONT_STYLE.UNDERLINE: this.#switchStyleClass('underline'); break;
-            case FONT_STYLE.WIDE: this.#switchStyleClass('wideFont'); break;
-            case FONT_STYLE.HIGH: this.#switchStyleClass('highFont'); break;
-            case FONT_STYLE.UPPER_INDEX: this.#switchStyleClass('upperIndex'); break;
-            case FONT_STYLE.LOWER_INDEX: this.#switchStyleClass('lowerIndex'); break;
-            case FONT_STYLE.BIG: this.#switchStyleClass('bigFont'); break;
-            default: console.warn('Unknown font style', fontStyle);
-        }
-    }
-
-    #switchStyleClass(className) {
-        if (this.currentTag.className.split(' ').includes(className)) {
-            this.#adjustStyle(this.currentTag);
-            this.currentTag = this.currentTag.parentElement;
-        } else {
-            let span = document.createElement('span');
-            span.className = [this.allTagClass, this.currentClasses, className].join(' ');
-            this.currentTag.appendChild(span);
-            this.currentTag = span;
-        }
-    }
-
-    #adjustStyle(tag) { // adjust width of span of wide and big font
-        const w = tag.getBoundingClientRect().width;
-        tag.style.width = w + 'px';
-    }
-
-    writeChar(utf8Char) {
-        if (this.readingHeader) {
-            this.readingHeader = false;
-            this.newPage();
-        }
-
-        this.currentTag.appendChild(document.createTextNode(utf8Char));
-        // if it's wide or big font add 2 spaces
-        const classNames = this.currentTag.className.split(' ');
-        if (classNames.includes('wideFont') || classNames.includes('bigFont')) {
-            this.charOnLineCounter += 2;
-        } else {
-            this.charOnLineCounter++;
-        }
-    }
-
-    writeTab() {
-        throw new Error('Tab not implemented');
-    }
-
-    newLine(createPageOnOverflow = true) {
-        // if we are in span, write the newline after it
-        let tagToAppend = this.currentTag;
-
-        if (this.currentTag.tagName === 'SPAN') {
-            tagToAppend = this.currentTag.parentElement;
-        } 
-        tagToAppend.appendChild(document.createElement('br'));
-        // prepend left margin to new line
-        
-        this.pageLinesCounter += this.#lineSpacing();
-        if (this.#isOnNewPage() && createPageOnOverflow) {
-            this.#marginLines(this.marginBottom)
-            this.newPage();
-            tagToAppend = this.currentTag;
-        }
-        tagToAppend.appendChild(document.createTextNode(this.leftMarginSpaces()));
-        this.charOnLineCounter = 0;
-    }
-
-    #marginLines(count) {
-        for (let i = 0; i < count; i++) {
-            this.newLine(false);
-        }
-    }
-
-    #updateLineSpacing() {
-        const classPrefix = 'lineHeight'
-        this.currentClasses = this.currentClasses.filter(c => !c.startsWith(classPrefix));
-        this.currentClasses.push(classPrefix + this.lineHeight);
-        const span = document.createElement('span');
-        span.className = [this.allTagClass, this.currentClasses].join(' ');
-        this.currentTag.appendChild(span);
-    }
-
-    #lineSpacing() {
-        switch (this.lineHeight) {
-            case LINE_HEIGHT.SINGLE: return 1;
-            case LINE_HEIGHT.ONE_HALF: return 1.5;
-            case LINE_HEIGHT.DOUBLE: return 2;
-            default: return 1;
-        }
-    }
-
-    #isOnNewPage() {
-        return this.pageLinesCounter + this.marginBottom >= this.pageLength;
-    }
-}
-
-class LineFileReader {
-    constructor(arrayBuffer) {
-        this.dataView = new DataView(arrayBuffer);
-        this.dataViewPos = 0;
-    }
-
-    readChar() {
-        try {
-            return this.dataView.getUint8(this.dataViewPos++);
-        } catch (e) {
-            return 0;
-        }
-    }
-
-    readLine() {
-        let line = [];
-        let prevCh = 0;
-        let ch = this.readChar();
-        while (ch !== 10 && ch !== 0) {
-            line.push(ch);
-            prevCh = ch;
-            ch = this.readChar();
-        }
-        if (prevCh === 13) {
-            line.pop();
-        }
-
-        return line;
-    }
-
-    onNextLine(callback) {
-        while (this.dataViewPos < this.dataView.byteLength) {
-            callback(this.readLine());
-        }
-    }
-    
-}
-
 const Charset = {
     KEYBCS2: 0,
     LATIN2: 1,
@@ -276,6 +22,12 @@ const CharsetTable = {
     }
 }
 
+const LineHeight = {
+    SINGLE: 6,
+    ONE_HALF: 4,
+    DOUBLE: 3
+}
+
 const FontStyle = {
     BOLD:        0x02,
     ITALIC:      0x04,
@@ -287,7 +39,7 @@ const FontStyle = {
     BIG:         0x1d
 }
 
-
+// Description: 602Reader class to read and render 602 files
 class T602Reader {
 
     constructor(arrayBuffer) {
@@ -431,6 +183,7 @@ class T602Reader {
     }
 
     #processText(line, documentWriter) {
+        documentWriter.newLine();
         for (let i = 0; i < line.length; i++) {
             if (line[i] < 32 || line[i] === 0x8d || line[i] === 0xfe || line[i] === 0xad) {
                 this.#processControlChar(line[i], documentWriter);
@@ -438,7 +191,6 @@ class T602Reader {
                 this.#writeChar(documentWriter, line[i]);
             }
         }
-        documentWriter.newLine();
     }
 
     #writeChar(documentWriter, ch) {
@@ -474,4 +226,43 @@ class T602Reader {
                 console.warn('Unknown control char', ch);
         }
     }
+}
+
+// Description: LineFileReader class to read 602 files line by line
+class LineFileReader {
+    constructor(arrayBuffer) {
+        this.dataView = new DataView(arrayBuffer);
+        this.dataViewPos = 0;
+    }
+
+    readChar() {
+        try {
+            return this.dataView.getUint8(this.dataViewPos++);
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    readLine() {
+        let line = [];
+        let prevCh = 0;
+        let ch = this.readChar();
+        while (ch !== 10 && ch !== 0) {
+            line.push(ch);
+            prevCh = ch;
+            ch = this.readChar();
+        }
+        if (prevCh === 13) {
+            line.pop();
+        }
+
+        return line;
+    }
+
+    onNextLine(callback) {
+        while (this.dataViewPos < this.dataView.byteLength) {
+            callback(this.readLine());
+        }
+    }
+    
 }

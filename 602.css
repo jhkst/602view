@@ -1,28 +1,4 @@
-@media print {
-    @page {
-        margin: 0;
-        padding: 0;
-    }
 
-    body * {
-        visibility: hidden;
-    }
-    #content {
-        height: 100%;
-    }
-    .c602.page {
-        page-break-before: always;
-        visibility: visible;
-        break-after: page;
-        background-color: white;
-        border: 0px;
-        overflow: hidden;
-    }
-
-    .c602.page * {
-        visibility: visible;
-    }
-}
 
 
 
@@ -91,4 +67,51 @@
 
 .c602.lineHeight3 {
     line-height: 2.3em;
+}
+
+@media print {
+    @page {
+        margin: 0;
+        padding: 0;
+    }
+
+    body * {
+        display: none
+    }
+    #content {
+        display: revert !important;
+        height: 100%;
+        border: 0;
+    }
+    .c602.page, .c602.page * {
+        display: revert !important;
+    }
+
+
+    .c602.page {
+        page-break-before: always;
+        break-after: page;
+        background-color: white;
+        border: 0px;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        break-inside: avoid;
+
+        /* A4
+        width: 210mm;
+        height: 297mm; */
+    }
+
+    .c602.wideFont {
+        display: inline-block !important;
+    }
+
+    .c602.highFont {
+        display: inline-block !important;
+    }
+
+    .c602.bigFont {
+        display: inline-block !important;
+    }
 }

@@ -20,10 +20,33 @@
 <body>
     <div id="control">
     <input type="file" id="fileInput">
-    <input type="radio" id="latin" name="charsetMode" value="latin" checked> Latin <input type="radio" id="cyrillic" name="charsetMode" value="cyrillic"> Cyrillic
+    <input type="radio" id="latin" name="charsetMode" value="latin" checked><label for="latin">Latin</label><input type="radio" id="cyrillic" name="charsetMode" value="cyrillic"><label for="cyrillic">Cyrillic</label>    
+    <!-- <input type="radio" id="html" name="outputMode" value="html" checked> HTML <input type="radio" id="svg" name="outputMode" value="svg"> SVG -->
     <button onclick="window.print()">Print</button>
     </div>
     <div id="content"></div>
-    <script src="602.js"></script>
+    <script src="602reader.js"></script>
+    <script src="602domWriter.js"></script>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', handleFile, false);
+
+        function handleFile(event) {
+            var file = event.target.files[0];
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                var arrayBuffer = event.target.result;
+                // get value of radio button of name="charsetMode"
+                const charsetModeValue = document.querySelector('input[name="charsetMode"]:checked').value;
+                const charsetMode = charsetModeValue === 'cyrillic' ? CharsetMode.CYRILLIC : CharsetMode.LATIN;
+
+                const documentWriter = new DOMWriter(document.getElementById('content'));
+
+                const t602Reader = new T602Reader(arrayBuffer);
+                t602Reader.setCharsetMode(charsetMode);
+                t602Reader.render(documentWriter);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
 </body>
 </html>
